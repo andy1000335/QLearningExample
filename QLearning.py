@@ -49,8 +49,7 @@ def environment(state, target_pos=TARGET_POS):
     '''
     state = ('x0', 'y0')
     target_pos = ('x4', 'y4')
-    bonase_pos = ('x2', 'y2')
-
+    
     O ┬ ┬ ┬ ┐
     ├ ┼ ┼ ┼ ┤
     ├ ┼ ┼ ┼ ┤
