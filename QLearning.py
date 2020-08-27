@@ -8,6 +8,7 @@ ROW_NUM = 5
 ACTION_LIST = ['left', 'right', 'up', 'down']
 ACTION_NUM = len(ACTION_LIST)
 TARGET_POS = ('x4', 'y4')
+TRAP_POS = ('x2', 'y2')
 FRESH_TIME = 0.08
 
 EPSILON = 0.9
@@ -45,14 +46,15 @@ def choose_action(table, state):
         action = stateAction.idxmax()
     return action
 
-def environment(state, target_pos=TARGET_POS):
+def environment(state, target_pos=TARGET_POS, trap_pos=TRAP_POS):
     '''
     state = ('x0', 'y0')
+    trap_pos = ('x2', 'y2')
     target_pos = ('x4', 'y4')
     
     O ┬ ┬ ┬ ┐
     ├ ┼ ┼ ┼ ┤
-    ├ ┼ ┼ ┼ ┤
+    ├ ┼ # ┼ ┤
     ├ ┼ ┼ ┼ ┤
     └ ┴ ┴ ┴ X
     '''
@@ -61,9 +63,12 @@ def environment(state, target_pos=TARGET_POS):
     stateY = int(state[1][1])
     targetX = int(target_pos[0][1])
     targetY = int(target_pos[1][1])
+    trapX = int(trap_pos[0][1])
+    trapY = int(trap_pos[1][1])
     
     env = ('┌ '+'┬ '*(COL_NUM-2)+'┐,' + ('├ '+'┼ '*(COL_NUM-2)+'┤,')*(ROW_NUM-2) + '└ '+'┴ '*(COL_NUM-2)+'┘').split(',')
     env[targetY] = env[targetY][0: targetX*2] + 'X' + env[targetY][(targetX*2+1): ]
+    env[trapY] = env[trapY][0: trapX*2] + '#' + env[trapY][(trapX*2+1): ]
     env[stateY] = env[stateY][0: stateX*2] + 'O' + env[stateY][(stateX*2+1): ]
 
     for row in env:
@@ -86,6 +91,8 @@ def get_next_state(state, action):
 
     if state_ == TARGET_POS:
         reword = 5
+    elif state_ == TRAP_POS:
+        reword = -1
 
     return state_, reword
 
@@ -94,17 +101,17 @@ def run_QLearning():
     for episode in range(MAX_EPISODES):
         step = 0
         state = ('x0', 'y0')    # initial position
-        isTarget = False
+        isTerminal = False
         environment(state)
-        while not isTarget:
+        while not isTerminal:
             action = choose_action(QTable, state)
             state_, reword = get_next_state(state, action)
             qVal = QTable.loc[action, state]
-            if state_ != TARGET_POS:
+            if (state_ != TARGET_POS) and (state_ != TRAP_POS):
                 qVal_ = reword + GAMMA*QTable.loc[:, state_].max()
             else:
                 qVal_ = reword
-                isTarget = True
+                isTerminal = True
             QTable.loc[action, state] += ALPHA * (qVal_ - qVal)
 
             state = state_
